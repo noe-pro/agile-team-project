@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusConnect — Événements à venir</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    ul { list-style: none; padding: 0; }
+    li { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+    li h2 { margin: 0 0 6px; font-size: 1.1em; }
+    .meta { color: #444; }
+    .notice { background: #e8f5e9; padding: 8px; }
+  </style>
+</head>
+<body>
+  <!-- CCG2-5 / US01 : consulter la liste des événements à venir -->
+  <h1>Événements à venir</h1>
+  <p><a href="create-event.html">+ Créer un événement</a></p>
+  <p id="notice" class="notice" hidden>Votre événement a été publié.</p>
+  <ul id="event-list"></ul>
+  <p id="empty-message" hidden>Aucun événement n'est planifié pour le moment. Revenez bientôt !</p>
+
+  <script>
+    const STORAGE_KEY = "campusconnect.events";
+    const SAMPLE = [
+      { id: "evt-1", title: "Soirée d'intégration", date: "2026-11-25", time: "19:00", location: "Foyer étudiant", description: "Rencontre entre promotions.", registered: false },
+      { id: "evt-2", title: "Conférence IA et emploi", date: "2026-12-03", time: "14:00", location: "Amphi A", description: "Intervenants du secteur.", registered: false }
+    ];
+
+    function loadEvents() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (Array.isArray(saved)) return saved;
+      } catch (e) { /* données illisibles : on repart des exemples */ }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE));
+      return SAMPLE;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = loadEvents()
+      .filter(e => e.date >= today)
+      .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+
+    const list = document.getElementById("event-list");
+    if (upcoming.length === 0) {
+      document.getElementById("empty-message").hidden = false;
+    }
+    upcoming.forEach(e => {
+      const li = document.createElement("li");
+      const date = new Date(e.date + "T00:00").toLocaleDateString("fr-FR",
+        { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      li.innerHTML = '<h2><a></a></h2><div class="meta"></div>';
+      const link = li.querySelector("a");
+      link.textContent = e.title;
+      link.href = "event-detail.html?id=" + encodeURIComponent(e.id);
+      li.querySelector(".meta").textContent =
+        date + (e.time ? " à " + e.time : "") + " — " + e.location;
+      list.appendChild(li);
+    });
+
+    if (new URLSearchParams(location.search).get("published")) {
+      document.getElementById("notice").hidden = false;
+    }
+  </script>
+</body>
+</html>
