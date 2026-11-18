@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusConnect — Créer un événement</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 16px; }
+    label { display: block; margin-top: 14px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 8px; box-sizing: border-box; font: inherit; }
+    textarea { min-height: 100px; }
+    button { margin-top: 18px; padding: 10px 18px; }
+    .errors { color: #b00020; }
+  </style>
+</head>
+<body>
+  <!-- CCG2-4 / US06 : créer et publier un nouvel événement -->
+  <h1>Créer un événement</h1>
+  <p><a href="events.html">← Retour aux événements</a></p>
+
+  <form id="create-event-form" novalidate>
+    <label for="title">Titre *</label>
+    <input type="text" id="title" name="title" maxlength="100" required>
+
+    <label for="date">Date *</label>
+    <input type="date" id="date" name="date" required>
+
+    <label for="time">Heure</label>
+    <input type="time" id="time" name="time">
+
+    <label for="location">Lieu *</label>
+    <input type="text" id="location" name="location" maxlength="100" required>
+
+    <label for="description">Description *</label>
+    <textarea id="description" name="description" required></textarea>
+
+    <div id="form-errors" class="errors" role="alert"></div>
+    <button type="submit">Publier</button>
+  </form>
+
+  <script>
+    const STORAGE_KEY = "campusconnect.events";
+    const REQUIRED = { title: "Titre", date: "Date", location: "Lieu", description: "Description" };
+
+    function loadEvents() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch (e) { return []; }
+    }
+
+    document.getElementById("create-event-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(this));
+      const missing = Object.keys(REQUIRED).filter(k => !String(data[k] || "").trim());
+      const errors = document.getElementById("form-errors");
+
+      if (missing.length > 0) {
+        errors.innerHTML = "<p>Informations requises :</p><ul>" +
+          missing.map(k => "<li>" + REQUIRED[k] + "</li>").join("") + "</ul>";
+        document.getElementById(missing[0]).focus();
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      if (data.date < today) {
+        errors.textContent = "La date de l'événement ne peut pas être dans le passé.";
+        document.getElementById("date").focus();
+        return;
+      }
+
+      const events = loadEvents();
+      events.push({
+        id: "evt-" + Date.now(),
+        title: data.title.trim(),
+        date: data.date,
+        time: data.time || "",
+        location: data.location.trim(),
+        description: data.description.trim(),
+        registered: false
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      // L'événement apparaît immédiatement dans le feed général
+      window.location.href = "events.html?published=1";
+    });
+  </script>
+</body>
+</html>
